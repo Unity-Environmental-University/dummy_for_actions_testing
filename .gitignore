@@ -1,0 +1,6 @@
+*.tgz
+/.vs/*
+/node_modules/*
+/dist/*
+/.idea/*
+.npmrc

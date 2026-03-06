@@ -1,0 +1,32 @@
+jobs:
+  publish:
+    if: "!contains(github.event.head_commit.message, 'chore: bump version')"
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write  # needed for the git push back to main
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+
+      - name: Publish to npm
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          PUBLISHED_VERSION=$(npm view $(node -p "require('./package.json').name") version 2>/dev/null || echo "0.0.0")
+          
+          if [ "$PACKAGE_VERSION" = "$PUBLISHED_VERSION" ]; then
+            echo "Version unchanged, bumping patch..."
+            git config user.email "ci@github.com"
+            git config user.name "GitHub Actions"
+            npm version patch -m "chore: bump version to %s"
+            git push
+          fi
+          
+          npm publish --access public --provenance --dry-run
